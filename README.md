@@ -2,52 +2,36 @@
 
 A production-style ML pipeline that trains a ResNet-18 image classifier on CIFAR-10 and serves predictions via a REST API — built with Docker for containerization and Kubernetes for orchestration.
 
-## Architecture
-┌─────────────┐ ┌──────────────────┐ ┌───────────────────────┐
-│ src/*.py │────▶│ Docker images │────▶│ Kubernetes cluster │
-│ (model, │ │ - train image │ │ │
-│ dataset, │ │ - serve image │ │ ┌───────────────────┐ │
-│ train, │ └──────────────────┘ │ │ Training Job │ │
-│ serve) │ │ │ (reads ConfigMap, │ │
-└─────────────┘ │ │ writes checkpoint │ │
-│ │ to PVC) │ │
-│ └─────────┬──────────┘ │
-│ │ │
-│ ▼ │
-│ ┌───────────────────┐ │
-│ │ Checkpoint PVC │ │
-│ └─────────┬──────────┘ │
-│ │ │
-│ ▼ │
-│ ┌───────────────────┐ │
-│ │ Serving Deployment │ │
-│ │ (2 replicas, │ │
-│ │ reads PVC, │ │
-│ │ liveness/readiness│ │
-│ │ probes) │ │
-│ └─────────┬──────────┘ │
-│ │ │
-│ ▼ │
-│ ┌───────────────────┐ │
-│ │ ClusterIP Service │ │
-│ │ (port 80 → 8080) │ │
-│ └───────────────────┘ │
-└───────────────────────┘
 ## Project structure
 
-mlops-pytorch-pipeline/
-
-├── src/ # model, dataset, training loop, FastAPI serving app
-
-├── configs/ # training hyperparameters
-
-├── docker/ # multi-stage Dockerfiles for training and serving
-
-├── k8s/ # Kubernetes manifests (Job, Deployment, Service, ConfigMap, PVCs, HPA)
-
-├── requirements/ # pinned dependencies, split by training vs serving
-
-└── tests/ # unit tests
+├── src/                    # Application code
+│   ├── model.py             # ResNet-18 classifier definition
+│   ├── dataset.py            # CIFAR-10 loading + transforms
+│   ├── train.py              # Training loop with early stopping
+│   └── serve.py               # FastAPI inference server
+│
+├── configs/
+│   └── training_config.yaml   # Hyperparameters, paths (read by train.py)
+│
+├── docker/
+│   ├── Dockerfile.train       # Multi-stage training image
+│   └── Dockerfile.serve       # Multi-stage serving image (non-root, healthcheck)
+│
+├── k8s/
+│   ├── namespace.yaml          # ml-training namespace
+│   ├── configmap.yaml          # Mounts training_config.yaml into the Job
+│   ├── pvc.yaml                # Persistent storage for data + checkpoints
+│   ├── training-job.yaml       # Runs training as a batch Job
+│   ├── serving-deployment.yaml # 2-replica model server with health probes
+│   ├── serving-service.yaml    # ClusterIP exposing the model server
+│   └── hpa.yaml                 # Autoscaling for the serving deployment
+│
+├── requirements/
+│   ├── train.txt              # torch, torchvision, pyyaml (CPU-only wheels)
+│   └── serve.txt               # fastapi, uvicorn, torch, pillow
+│
+└── tests/
+    └── test_model.py           # Unit tests for model.py
 
 ## Setup — local training
 
