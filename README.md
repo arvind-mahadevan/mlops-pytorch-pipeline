@@ -34,12 +34,19 @@ A production-style ML pipeline that trains a ResNet-18 image classifier on CIFAR
 │ └───────────────────┘ │
 └───────────────────────┘
 ## Project structure
+
 mlops-pytorch-pipeline/
+
 ├── src/ # model, dataset, training loop, FastAPI serving app
+
 ├── configs/ # training hyperparameters
+
 ├── docker/ # multi-stage Dockerfiles for training and serving
+
 ├── k8s/ # Kubernetes manifests (Job, Deployment, Service, ConfigMap, PVCs, HPA)
+
 ├── requirements/ # pinned dependencies, split by training vs serving
+
 └── tests/ # unit tests
 
 ## Setup — local training
